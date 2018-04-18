@@ -61,11 +61,13 @@ public:
 
 	~RpiGPIO( );
 
-	ERpioGpioDir GetPinDirection( );
-
 	ERpioGpioState GetPinState( );
 
-	ERpioGpioDir SetPinDirection( );
+	bool SetPinDirection( const ERpioGpioDir aDir );
+
+	ERpioGpioDir GetPinDirection( );
+
+	bool IsInitialized( ) { return iIsInitialized; };
 
 private:
 
@@ -73,11 +75,9 @@ private:
 
 	bool IsValidGPIODir( const ERpioGpioDir aPin );
 
-	bool IsInitialized( const ERpiGpioPin aPin );
+	bool IsPinInitialized( const ERpiGpioPin aPin );
 
-	ERpioGpioDir GetSystemPinDirection( );
-
-	bool SetSystemPinDirection( const ERpioGpioDir aDir );
+	bool InitializePin( const ERpiGpioPin aPin );
 };
 
 } /* namespace rpi */
