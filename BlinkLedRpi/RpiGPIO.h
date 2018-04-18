@@ -69,6 +69,8 @@ public:
 
 	bool IsInitialized( ) { return iIsInitialized; };
 
+	void SetPinState( const ERpioGpioState aPinState );
+
 private:
 
 	bool IsValidGPIOPin( const ERpiGpioPin aPin );
@@ -78,6 +80,8 @@ private:
 	bool IsPinInitialized( const ERpiGpioPin aPin );
 
 	bool InitializePin( const ERpiGpioPin aPin );
+
+	void DeInitializePin( );
 };
 
 } /* namespace rpi */

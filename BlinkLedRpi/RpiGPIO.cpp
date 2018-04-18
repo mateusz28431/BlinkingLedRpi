@@ -12,7 +12,7 @@
 #define RPI_LOG( a ) (std::cout<< "RPIO_GPIO: " << ( a )<< std::endl)
 namespace rpi {
 
-const std::string GPIO_PATH = "/sys/class/gpio";
+const std::string GPIO_PATH = "/sys/class/gpio/";
 
 RpiGPIO::RpiGPIO( const ERpiGpioPin aPin, const ERpioGpioDir aDir )
 {
@@ -27,14 +27,24 @@ RpiGPIO::RpiGPIO( const ERpiGpioPin aPin, const ERpioGpioDir aDir )
 	if( !InitializePin( aPin ) )
 		return;
 
+	iPin = aPin;;
+
 	if( SetPinDirection( aDir ) )
+	{
+		iDir = aDir;
 		iIsInitialized = true;
+	}
 	else
+	{
 		iIsInitialized = false;
+		iDir = ERpioGpioDir::Gpio_Dir_In; //default mode
+	}
 }
 
 RpiGPIO::~RpiGPIO( )
 {
+	RPI_LOG( "~RpiGPIO( )" );
+	DeInitializePin( );
 }
 
 
@@ -102,16 +112,25 @@ bool RpiGPIO::InitializePin( const ERpiGpioPin aPin )
 		return true;
 
 	ShellCommand cmd;
-	std::string gpioPin = "gpio" + std::to_string( aPin );
-	cmd.DoCommand( "echo " + std::to_string( aPin ) + GPIO_PATH + "/export" );
+	cmd.DoCommand( "echo " + std::to_string( aPin ) + " > " + GPIO_PATH + "export" );
 
 	return IsPinInitialized( aPin );
+}
+
+void RpiGPIO::DeInitializePin( )
+{
+	if( !iIsInitialized )
+		return;
+
+	ShellCommand cmd;
+	cmd.DoCommand( "echo " + std::to_string( iPin ) + " > " + GPIO_PATH + "unexport" );
 }
 
 ERpioGpioDir RpiGPIO::GetPinDirection( )
 {
 	ShellCommand cmd;
-	std::vector< std::string > out = cmd.DoCommand( "cat " + GPIO_PATH + "/gpio" + std::to_string( iPin ) + "/direction" );
+	std::string gpioPin = "gpio" + std::to_string( iPin );
+	std::vector< std::string > out = cmd.DoCommand( "cat " + GPIO_PATH + gpioPin + "/direction" );
 
 	if( out.size( ) == 0 )
 		return ERpioGpioDir::Gpio_Dir_NotSet;
@@ -124,17 +143,28 @@ ERpioGpioDir RpiGPIO::GetPinDirection( )
 		return ERpioGpioDir::Gpio_Dir_NotSet;
 }
 
+void RpiGPIO::SetPinState( const ERpioGpioState aPinState )
+{
+	if( !iIsInitialized )
+		return;
+
+	ShellCommand cmd;
+	std::string gpioPin = "gpio" + std::to_string( iPin );
+	cmd.DoCommand( "echo " + std::to_string( aPinState ) + " > " + GPIO_PATH  + gpioPin + "/value" );
+}
+
 bool RpiGPIO::SetPinDirection( const ERpioGpioDir aDir )
 {
 	ShellCommand cmd;
+	std::string gpioPin = "gpio" + std::to_string( iPin );
 
 	if( aDir == Gpio_Dir_Out )
 	{
-		cmd.DoCommand( "echo  out" + GPIO_PATH + "/gpio" + std::to_string( iPin ) + "/direction" );
+		cmd.DoCommand( "echo  out > " + GPIO_PATH + gpioPin + "/direction" );
 	}
 	else if( aDir == Gpio_Dir_In )
 	{
-		cmd.DoCommand( "echo  in" + GPIO_PATH + "/gpio" + std::to_string( iPin ) + "/direction" );
+		cmd.DoCommand( "echo  in > " + GPIO_PATH + gpioPin + "/direction" );
 	}
 	else
 		return false;
